@@ -47,15 +47,17 @@ class I3ResNet(torch.nn.Module):
 
         if conv_class:
             self.avgpool = inflate.inflate_pool(resnet2d.avgpool, time_dim=1)
+            # 【头 1：预测 EHR 的分类头】
             self.classifier = torch.nn.Conv3d(
                 in_channels=2048,
-                out_channels=class_nb,
+                out_channels=class_nb, #外部输入是1692，表型数
                 kernel_size=(1, 1, 1),
                 bias=True,
             )
+            # 【头 2：生成图像特征的降维头】
             self.contrastive_head = torch.nn.Conv3d(
                 in_channels=2048, out_channels=512, kernel_size=(1, 1, 1), bias=True
-            )
+            )    #固定输出 512 维，为了和文本对齐
         else:
             final_time_dim = int(math.ceil(frame_nb / 16))
             self.avgpool = inflate.inflate_pool(
@@ -95,10 +97,12 @@ class I3ResNet(torch.nn.Module):
             if self.ImageEmbedding:
                 return x_features.squeeze(2).squeeze(2).squeeze(2).unsqueeze(0)
 
+            # 1.预测 1692 个 EHR 表型
             x_ehr = self.classifier(x_features)
             x_ehr = x_ehr.squeeze(3)
             x_ehr = x_ehr.squeeze(3)
             x_ehr = x_ehr.mean(2)
+            # 2.生成 512 维的对比特征
             x_contrastive = self.contrastive_head(x_features)
             x_contrastive = x_contrastive.squeeze(3)
             x_contrastive = x_contrastive.squeeze(3)
@@ -107,7 +111,7 @@ class I3ResNet(torch.nn.Module):
                 return x_contrastive, x_ehr, skips
             else:
                 if self.PhenotypeCls or self.FiveYearPred:
-                    probs = torch.sigmoid(x_ehr)
+                    probs = torch.sigmoid(x_ehr)  #sigmoid：多标签二分类（模型对这1692个EHR特征，每一个都独立输出一个0-1之间的概率（概率> 0.5就算有））
                     return probs
 
                 return x_contrastive, x_ehr
