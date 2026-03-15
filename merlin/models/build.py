@@ -31,13 +31,17 @@ class ImageEncoder(nn.Module):
         )
 
     def forward(self, image):
+        # 模式1：只要 512 维图像特征，用来和文本特征做对比学习
         if self.ImageEmbedding:
             contrastive_features = self.i3_resnet(image)
             return contrastive_features
+        # 模式2: 表型预测概率
         elif self.PhenotypeCls:
             return self.i3_resnet(image)
+        # 模式3:五年疾病预测
         elif self.FiveYearPred:
             return self.i3_resnet(image)
+        # 默认模式（多模态训练时使用）：既要512 维图像特征去和文本对齐，又要 1692 维特征去算 EHR 的误差
         else:
             contrastive_features, ehr_features = self.i3_resnet(image)
             return contrastive_features, ehr_features
