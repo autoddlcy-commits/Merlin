@@ -104,20 +104,24 @@ class MerlinArchitecture(nn.Module):
             raise ValueError("Text input not required for five year disease prediction")
         elif text is None:
             raise ValueError("Text input required for Image and Text embedding")
+            
         #图像、EHR、文本编码
         image_features, ehr_features = self.encode_image(image)
         text_features = self.encode_text(text)
-        #
+        
+        #维度对齐（单样本填充batch位为第0位）
         if len(image_features.shape) == 1:
             image_features = image_features.unsqueeze(0)
         if len(text_features.shape) == 1:
             text_features = text_features.unsqueeze(0)
+            
         #L2归一化：归一化后的向量模长全部变为 1
         ###图像编码器（ResNet/ViT）和文本编码器（BERT/Transformer）输出的数值量级通常不一样；这样对齐到同一个单位超球面上，让不同模态的特征在同一个“量级”下进行比较。
         image_features = image_features / image_features.norm(dim=-1, keepdim=True)
         #image_features.norm(dim=-1, keepdim=True)：计算每个特征向量的 L2 范数（模长）
         text_features = text_features / text_features.norm(dim=-1, keepdim=True)
-
+        
+        #输出：(图像特征, EHR特征, 文本特征)
         return (
             image_features,
             ehr_features,
