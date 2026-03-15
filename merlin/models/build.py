@@ -65,7 +65,7 @@ class TextEncoder(nn.Module):
         text_embeddings = self.linear_layer(text_embeddings)
         return text_embeddings
 
-
+#Merlin：既能单独处理图片，也能同时处理图片和文本。
 class MerlinArchitecture(nn.Module):
     def __init__(
         self,
