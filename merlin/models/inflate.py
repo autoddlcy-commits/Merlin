@@ -3,7 +3,7 @@
 import torch
 from torch.nn import Parameter
 
-
+#inflate_conv: 2D 卷积膨胀成3D 卷积，增加深度/时间维度 T ，也就是 time_dim；分为1.中心法和2.复制法
 def inflate_conv(
     conv2d, time_dim=3, time_padding=0, time_stride=1, time_dilation=1, center=False
 ):
@@ -24,13 +24,22 @@ def inflate_conv(
         )
         # Repeat filter time_dim times along time dimension
         weight_2d = conv2d.weight.data
+        #1.中心填入法 (center=True 1)
         if center:
-            weight_3d = torch.zeros(*weight_2d.shape)
-            weight_3d = weight_3d.unsqueeze(2).repeat(1, 1, time_dim, 1, 1)
+            # 建一个全为 0 的立体方块
+            weight_3d = torch.zeros(*weight_2d.shape) #全0的2D
+            weight_3d = weight_3d.unsqueeze(2).repeat(1, 1, time_dim, 1, 1) #复制 time_dim 份，叠成 time_dim 层
+            # 找到中间一层
             middle_idx = time_dim // 2
+            # 中间层填入原本 2D 的权重
             weight_3d[:, :, middle_idx, :, :] = weight_2d
+        #原理：当这个 3D 卷积核去扫 CT 图像时，因为它上下两层全是 0，所以它实际上只看到了当前这一层的图像，计算结果和原来的 2D 模型一模一样。
+        #     随着后续训练，那些 0 的地方才会慢慢更新出数值，学会看上下层的信息。
+        #2.层层复制法 (center=False 1)
         else:
+            # 把原来的 2D 权重，直接复制 time_dim 份，叠成 time_dim 层
             weight_3d = weight_2d.unsqueeze(2).repeat(1, 1, time_dim, 1, 1)
+            # 把所有权重的值除以 time_dim：上一步后参数量级变成 time_dim 倍，需要除以 time_dim ，防止模型爆炸
             weight_3d = weight_3d / time_dim
 
         # Assign new params
@@ -51,11 +60,13 @@ def inflate_conv(
         )
         # Repeat filter time_dim times along time dimension
         weight_2d = conv2d.weight.data
+        #1.中心填入法 (center=True 2)
         if center:
             weight_3d = torch.zeros(*weight_2d.shape)
             weight_3d = weight_3d.unsqueeze(2).repeat(1, 1, time_dim, 1, 1)
             middle_idx = time_dim // 2
             weight_3d[:, :, middle_idx, :, :] = weight_2d
+        #2.层层复制法 (center=False 2)
         else:
             weight_3d = weight_2d.unsqueeze(2).repeat(1, 1, time_dim, 1, 1)
             weight_3d = weight_3d / time_dim
@@ -79,12 +90,16 @@ def inflate_linear(linear2d, time_dim):
     linear3d.bias = linear2d.bias
     return linear3d
 
-
+#把传入的batch2d的检查函数（4维）换成batch3d的检查函数（5维）
 def inflate_batch_norm(batch2d):
     # In pytorch 0.2.0 the 2d and 3d versions of batch norm
     # work identically except for the check that verifies the
-    # input dimensions
+    # input dimensions 
+    #2D：4 [Batch, Channel, Height, Width]
+    #3D：5 [Batch, Channel, Depth, Height, Width]
+    #batch_norm：按 Channel 计算所有像素求均值和方差；把数据重新拉回到均值为 0、方差为 1 的标准范围内，让网络训练更稳定。
 
+    # BatchNorm2d 和 BatchNorm3d 的_check_input_dim函数分别只接受 4维 和 5维 的输入
     batch3d = torch.nn.BatchNorm3d(batch2d.num_features)
     # retrieve 3d _check_input_dim function
     batch2d._check_input_dim = batch3d._check_input_dim
