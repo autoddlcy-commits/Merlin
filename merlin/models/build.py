@@ -4,6 +4,7 @@ import torch
 from torch import nn
 from transformers import AutoModel, AutoTokenizer
 from nltk.tokenize import wordpunct_tokenize
+#nltk：自然语言处理库；tokenize模块：文本分词；wordpunct_tokenize函数：分词器，按照字母和标点分开（文本："Hello, world! NLP is fun." -> tokens：['Hello', ',', 'world', '!', 'NLP', 'is', 'fun', '.']）
 import torchvision
 
 from merlin.models import i3res
@@ -20,6 +21,7 @@ class ImageEncoder(nn.Module):
         self.ImageEmbedding = ImageEmbedding
         self.PhenotypeCls = PhenotypeCls
         self.FiveYearPred = FiveYearPred
+        # pytorch官方的 2D 图像分类模型，ResNet-152；已经在ImageNet训练好了，会看普通2D图像
         resnet = torchvision.models.resnet152(pretrained=True)
         self.i3_resnet = i3res.I3ResNet(
             copy.deepcopy(resnet),
