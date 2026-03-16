@@ -1,9 +1,10 @@
 """ Code adapted from https://github.com/hassony2/inflated_convnets_pytorch """
-
+#通用的2D到3D的膨胀模块（通用：适用于所有2D卷积网络，ResNet、VGG、DenseNet等）
 import torch
 from torch.nn import Parameter
 
-#inflate_conv: 2D 卷积膨胀成3D 卷积，增加深度/时间维度 T ，也就是 time_dim；分为1.中心法和2.复制法
+#inflate_conv: 卷积层膨胀
+#增加深度/时间维度 T ，也就是 time_dim；分为1.中心填入法和2.层层复制法
 def inflate_conv(
     conv2d, time_dim=3, time_padding=0, time_stride=1, time_dilation=1, center=False
 ):
@@ -76,7 +77,7 @@ def inflate_conv(
         conv3d.bias = conv2d.bias
     return conv3d
 
-
+#inflate_linear：全连接层膨胀
 def inflate_linear(linear2d, time_dim):
     """
     Args:
@@ -90,6 +91,7 @@ def inflate_linear(linear2d, time_dim):
     linear3d.bias = linear2d.bias
     return linear3d
 
+#inflate_batch_norm：BN层膨胀
 #把传入的batch2d的检查函数（4维）换成batch3d的检查函数（5维）
 def inflate_batch_norm(batch2d):
     # In pytorch 0.2.0 the 2d and 3d versions of batch norm
@@ -105,7 +107,7 @@ def inflate_batch_norm(batch2d):
     batch2d._check_input_dim = batch3d._check_input_dim
     return batch2d
 
-
+#inflate_pool：池化层膨胀
 def inflate_pool(pool2d, time_dim=1, time_padding=0, time_stride=None, time_dilation=1):
     if isinstance(pool2d, torch.nn.AdaptiveAvgPool2d):
         pool3d = torch.nn.AdaptiveAvgPool3d((1, 1, 1))
