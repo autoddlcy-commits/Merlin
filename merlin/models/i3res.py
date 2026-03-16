@@ -121,7 +121,7 @@ class I3ResNet(torch.nn.Module):
             x = self.fc(x_reshape)
         return x
 
-
+#2D变为3D：class Bottleneck3d里的inflate.inflate_conv逻辑，HxW的卷积核变为TxHxW，增加“深度”维度（time_dim）
 def inflate_reslayer(reslayer2d):
     reslayers3d = []
     for layer2d in reslayer2d:
@@ -137,6 +137,7 @@ class Bottleneck3d(torch.nn.Module):
         spatial_stride = bottleneck2d.conv2.stride[0]
 
         self.conv1 = inflate.inflate_conv(bottleneck2d.conv1, time_dim=1, center=True)
+        #time_dim=1（=3）：把 1x1（3x3） 的2D卷积核变成 1x1x1（3x3x3）的3D卷积核
         self.bn1 = inflate.inflate_batch_norm(bottleneck2d.bn1)
 
         self.conv2 = inflate.inflate_conv(
