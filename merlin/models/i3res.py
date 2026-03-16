@@ -11,7 +11,7 @@ from merlin.models import inflate
 class I3ResNet(torch.nn.Module):
     def __init__(
         self,
-        resnet2d,
+        resnet2d, #传入的2D模型
         frame_nb=16,
         class_nb=1000,
         conv_class=False,
@@ -27,10 +27,13 @@ class I3ResNet(torch.nn.Module):
         """
         super(I3ResNet, self).__init__()
         self.return_skips = return_skips
-        self.conv_class = conv_class
+        self.conv_class = conv_class  # 是否使用卷积层作为分类器，以适应不同数量的帧，bool型。
         self.ImageEmbedding = ImageEmbedding
         self.PhenotypeCls = PhenotypeCls
         self.FiveYearPred = FiveYearPred
+        #对传入的2D模型进行3D膨胀
+        #ResNet结构分为1.和2.，分别进行膨胀
+        #1.conv1，bn1，relu，maxpool
         self.conv1 = inflate.inflate_conv(
             resnet2d.conv1, time_dim=3, time_padding=1, center=True
         )
@@ -39,7 +42,7 @@ class I3ResNet(torch.nn.Module):
         self.maxpool = inflate.inflate_pool(
             resnet2d.maxpool, time_dim=3, time_padding=1, time_stride=2
         )
-
+        #2.由Bottleneck组成的layer：layer1 到 layer4
         self.layer1 = inflate_reslayer(resnet2d.layer1)
         self.layer2 = inflate_reslayer(resnet2d.layer2)
         self.layer3 = inflate_reslayer(resnet2d.layer3)
