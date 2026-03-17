@@ -3,13 +3,14 @@
 import torch
 from torch.nn import Parameter
 
-#inflate_conv: 卷积层膨胀
+#inflate_conv: 卷积层膨胀，分为 1.非reslayer里的卷积层 2.reslayer里各bottleneck的三个卷积层
 #增加深度/时间维度 T ，也就是 time_dim；分为1.中心填入法和2.层层复制法
 def inflate_conv(
     conv2d, time_dim=3, time_padding=0, time_stride=1, time_dilation=1, center=False
 ):
     # To preserve activations, padding should be by continuity and not zero
     # or no padding in time dimension
+    # 1.非reslayer里的卷积层：原始2d卷积核7x7
     if conv2d.kernel_size[0] == 7:
         kernel_dim = (3, 7, 7)
         padding = (1, 3, 3)
@@ -24,6 +25,7 @@ def inflate_conv(
             stride=stride,
         )
         # Repeat filter time_dim times along time dimension
+        # weight_2d现在是普通的矩阵数据（Tensor），不是可学习参数
         weight_2d = conv2d.weight.data
         #1.中心填入法 (center=True 1)
         if center:
@@ -44,8 +46,11 @@ def inflate_conv(
             weight_3d = weight_3d / time_dim
 
         # Assign new params
+         #将普通的矩阵数据（Tensor）weight_3d，变成可学习参数conv3d.weight
         conv3d.weight = Parameter(weight_3d)
+        #bias不需要操作：输出通道数3d和2d一样，直接用2d卷积层的bias
         conv3d.bias = conv2d.bias
+    # 2.reslayer里各bottleneck的三个卷积层，卷积核大小每个layer各不相同
     else:
         kernel_dim = (time_dim, conv2d.kernel_size[0], conv2d.kernel_size[1])
         padding = (time_padding, conv2d.padding[0], conv2d.padding[1])
@@ -107,24 +112,30 @@ def inflate_batch_norm(batch2d):
     batch2d._check_input_dim = batch3d._check_input_dim
     return batch2d
 
-#inflate_pool：池化层膨胀
+#inflate_pool：池化层膨胀，分为 1.全局平均池化1次 2.最大池化1次
 def inflate_pool(pool2d, time_dim=1, time_padding=0, time_stride=None, time_dilation=1):
+    # 1.全局平均池化
+    # pool2d：无论输入尺寸，输出都是1x1；pool3d：都是1x1x1
     if isinstance(pool2d, torch.nn.AdaptiveAvgPool2d):
         pool3d = torch.nn.AdaptiveAvgPool3d((1, 1, 1))
+    # 2.最大池化
     else:
+        #卷积核大小、padding、stride（dilation）分别根据 T维度 转为3d适配
         kernel_dim = (time_dim, pool2d.kernel_size, pool2d.kernel_size)
         padding = (time_padding, pool2d.padding, pool2d.padding)
         if time_stride is None:
             time_stride = time_dim
         stride = (time_stride, pool2d.stride, pool2d.stride)
         if isinstance(pool2d, torch.nn.MaxPool2d):
+            #dilation：空洞率，默认=1————3x3卷积核；>1，如=2————隔开一个像素，虽然覆盖5x5的面积，但实际还是3x3个位置有参数；目的是在不增加计算量的情况下，扩大感受野
             dilation = (time_dilation, pool2d.dilation, pool2d.dilation)
             pool3d = torch.nn.MaxPool3d(
                 kernel_dim,
                 padding=padding,
                 dilation=dilation,
                 stride=stride,
-                ceil_mode=pool2d.ceil_mode,
+                #ceil_mode：向上/向下取整
+                ceil_mode=pool2d.ceil_mode, 
             )
         elif isinstance(pool2d, torch.nn.AvgPool2d):
             pool3d = torch.nn.AvgPool3d(kernel_dim, stride=stride)
