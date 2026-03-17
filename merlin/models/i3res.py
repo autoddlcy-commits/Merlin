@@ -42,7 +42,7 @@ class I3ResNet(torch.nn.Module):
         self.maxpool = inflate.inflate_pool(
             resnet2d.maxpool, time_dim=3, time_padding=1, time_stride=2
         )
-        #2.由Bottleneck组成的layer：layer1 到 layer4
+        #2.由Bottleneck组成的layer：layer1 到 layer4【inflate_reslayer函数位于该文件，而不是inflate文件】
         self.layer1 = inflate_reslayer(resnet2d.layer1)
         self.layer2 = inflate_reslayer(resnet2d.layer2)
         self.layer3 = inflate_reslayer(resnet2d.layer3)
@@ -124,6 +124,7 @@ class I3ResNet(torch.nn.Module):
             x = self.fc(x_reshape)
         return x
 
+#inflate_reslayer：专为resnet的layer设计的膨胀函数
 #2D变为3D：class Bottleneck3d里的inflate.inflate_conv逻辑，HxW的卷积核变为TxHxW，增加“深度”维度（time_dim）
 def inflate_reslayer(reslayer2d):
     reslayers3d = []
@@ -134,13 +135,17 @@ def inflate_reslayer(reslayer2d):
 
 
 class Bottleneck3d(torch.nn.Module):
+    #bottleneck2d：原始resnet-152的设计，主路包括3个卷积核————两头小（1x1）中间大（3x3），channel数两头大中间小；shortcut为残差连接，包括一个downsample
+    #1x1卷积:混合channel信息，或改变channel数量————每次只看到单一像素，看不到邻近像素
+    #    改变channel数量：节省算力，防止模型过拟合；几乎不损失图像信息————1.不是所有channel都饱含信息，有冗余和噪声 2.残差连接：out = out + residual（原始channel的信息）
+    #    1x1卷积将卷积前channel赋予不同的权重然后求和，将核心特征集中在卷积后的channel里
+    #3x3卷积:提取图片边缘、纹理等空间特征————可以看到中心像素的邻近像素；膨胀后有了T维度，能看到当前切片的上下切片
     def __init__(self, bottleneck2d):
         super(Bottleneck3d, self).__init__()
 
         spatial_stride = bottleneck2d.conv2.stride[0]
 
         self.conv1 = inflate.inflate_conv(bottleneck2d.conv1, time_dim=1, center=True)
-        #time_dim=1（=3）：把 1x1（3x3） 的2D卷积核变成 1x1x1（3x3x3）的3D卷积核
         self.bn1 = inflate.inflate_batch_norm(bottleneck2d.bn1)
 
         self.conv2 = inflate.inflate_conv(
@@ -180,22 +185,27 @@ class Bottleneck3d(torch.nn.Module):
             out = self.bn3(out)
             return out
 
-        residual = x
+        residual = x    # 1.把原始输入 x 存到备用变量 residual 里
 
-        if self.downsample is not None:
-            residual = self.downsample(x)
+        # shortcut
+        if self.downsample is not None:    # 2.判断是否进行downsample【这里的self.downsample已经转为3D的了】
+            residual = self.downsample(x)  【可以写在x进入主路之前，因为HW和channel的操作在 __init__ 被执行时已经定好】
 
+        #主路                               # 3.主路进行3次卷积
         if x.requires_grad:
+            #checkpoint 优化显存：时间换空间————正向传播时，不保存这些卷积层的中间计算结果（从而省下大量显卡内存）；等到反向传播算梯度时，再临时重新算一遍
             out = checkpoint.checkpoint(run_function, x)
         else:
             out = run_function(x)
 
+        # 4.shortcut和主路汇合
         out = out + residual
         out = self.relu(out)
         return out
 
-
+#下采样的2D到3D转换函数【当 downsample2d 不是 None 时】
 def inflate_downsample(downsample2d, time_stride=1):
+    # downsample2d：原始resnet-152的下采样模块，包括两个；downsample2d[0]：1x1卷积层，减小长宽，放大通道数；downsample2d[1]：BN层
     downsample3d = torch.nn.Sequential(
         inflate.inflate_conv(
             downsample2d[0], time_dim=1, time_stride=time_stride, center=True
