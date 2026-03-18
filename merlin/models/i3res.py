@@ -32,7 +32,7 @@ class I3ResNet(torch.nn.Module):
         self.PhenotypeCls = PhenotypeCls
         self.FiveYearPred = FiveYearPred
         #对传入的2D模型进行3D膨胀
-        #ResNet结构分为1.和2.，分别进行膨胀
+        #ResNet结构分为1. 2. 3.分别进行膨胀
         #1.conv1，bn1，relu，maxpool
         self.conv1 = inflate.inflate_conv(
             resnet2d.conv1, time_dim=3, time_padding=1, center=True
@@ -48,6 +48,7 @@ class I3ResNet(torch.nn.Module):
         self.layer3 = inflate_reslayer(resnet2d.layer3)
         self.layer4 = inflate_reslayer(resnet2d.layer4)
 
+        #3.平均池化和输出形式【conv_class = False：传统全连接分类器 conv_class = True：改用 1x1x1 的 3D 卷积层】
         if conv_class:
             self.avgpool = inflate.inflate_pool(resnet2d.avgpool, time_dim=1)
             # 【头 1：预测 EHR 的分类头】
