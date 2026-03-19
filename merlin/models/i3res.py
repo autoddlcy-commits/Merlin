@@ -49,24 +49,27 @@ class I3ResNet(torch.nn.Module):
         self.layer4 = inflate_reslayer(resnet2d.layer4)
 
         #3.平均池化和全连接【conv_class = False：传统全连接分类器 conv_class = True：改用 1x1x1 的 3D 卷积层】
+        #3D卷积分类器，3D卷积核扫描切片，无需变成1x1x1输入
         if conv_class:
             self.avgpool = inflate.inflate_pool(resnet2d.avgpool, time_dim=1)
-            # 【头 1：预测 EHR 的分类头】
+            # 【任务 1：EHR 表型分类】
             self.classifier = torch.nn.Conv3d(
-                in_channels=2048,
-                out_channels=class_nb, #外部输入是1692，表型数
+                in_channels=2048,      #2048:ResNet-152的layer4的输出通道
+                out_channels=class_nb, #class_nb：1692，Merlin实验的表型数
                 kernel_size=(1, 1, 1),
                 bias=True,
             )
-            # 【头 2：生成图像特征的降维头】
+            # 【任务 2：跨模态（CT-reports）相似检索】
             self.contrastive_head = torch.nn.Conv3d(
                 in_channels=2048, out_channels=512, kernel_size=(1, 1, 1), bias=True
-            )    #固定输出 512 维，为了和文本对齐
-        #传统全连接分类器，
+            )                         
+            #512:为了让输出的图像特征和文本对齐，计算余弦相似度；512是公认的既能保留足够信息、又不会因为维度太高导致计算量爆炸的黄金标准维度
+        #传统全连接分类器，写死输入通道，需要输入为1x1x1
         else:
             #frame_nb：输入CT 的 Z轴层数（切片数） final_time_dim:输出的 Z轴层数（切片数）【可能不是1，不适配2d的平均池化，需要池化层进行膨胀成3d】
             #/16:输入CT经过maxpool、layer1-4，输出变为输入的1/16   ceil：输入切片数不一定是16的整数
             final_time_dim = int(math.ceil(frame_nb / 16))
+            #inflate.inflate_pool函数：输入resnet2d的平均池化，无论time_dim，输出都是1x1x1，便于下一步进入全连接层
             self.avgpool = inflate.inflate_pool(
                 resnet2d.avgpool, time_dim=final_time_dim
             )
