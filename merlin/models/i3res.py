@@ -27,7 +27,7 @@ class I3ResNet(torch.nn.Module):
         """
         super(I3ResNet, self).__init__()
         self.return_skips = return_skips
-        self.conv_class = conv_class  # 是否使用卷积层作为分类器，以适应不同数量的帧，bool型。
+        self.conv_class = conv_class  # 是否使用卷积层作为分类器，以适应不同数量的切片（不同患者切片可能是64、128或别的数），bool型。
         self.ImageEmbedding = ImageEmbedding
         self.PhenotypeCls = PhenotypeCls
         self.FiveYearPred = FiveYearPred
@@ -48,7 +48,7 @@ class I3ResNet(torch.nn.Module):
         self.layer3 = inflate_reslayer(resnet2d.layer3)
         self.layer4 = inflate_reslayer(resnet2d.layer4)
 
-        #3.平均池化和输出形式【conv_class = False：传统全连接分类器 conv_class = True：改用 1x1x1 的 3D 卷积层】
+        #3.平均池化和全连接【conv_class = False：传统全连接分类器 conv_class = True：改用 1x1x1 的 3D 卷积层】
         if conv_class:
             self.avgpool = inflate.inflate_pool(resnet2d.avgpool, time_dim=1)
             # 【头 1：预测 EHR 的分类头】
@@ -62,7 +62,10 @@ class I3ResNet(torch.nn.Module):
             self.contrastive_head = torch.nn.Conv3d(
                 in_channels=2048, out_channels=512, kernel_size=(1, 1, 1), bias=True
             )    #固定输出 512 维，为了和文本对齐
+        #传统全连接分类器，
         else:
+            #frame_nb：输入CT 的 Z轴层数（切片数） final_time_dim:输出的 Z轴层数（切片数）【可能不是1，不适配2d的平均池化，需要池化层进行膨胀成3d】
+            #/16:输入CT经过maxpool、layer1-4，输出变为输入的1/16   ceil：输入切片数不一定是16的整数
             final_time_dim = int(math.ceil(frame_nb / 16))
             self.avgpool = inflate.inflate_pool(
                 resnet2d.avgpool, time_dim=final_time_dim
