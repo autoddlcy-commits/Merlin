@@ -1,5 +1,6 @@
 """
 Download Merlin and test the model on sample data that is downloaded from huggingface
+下载Merlin，并使用从 huggingface 下载的示例数据对该模型进行测试。
 """
 
 import os
