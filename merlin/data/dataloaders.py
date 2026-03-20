@@ -13,8 +13,14 @@ from merlin.data.monai_transforms import ImageTransforms
 
 class CTPersistentDataset(monai.data.PersistentDataset):
     #data：待处理的数据清单（N张CT的路径）
-    #transform：./monai_transformer里定义的
+    #transform：./monai_transformer里定义的ImageTransforms
+    #cache_dir：存储处理好的data（tensor张量），一个个.pt文件【Pytorch的pickle 的技术，可以通过torch.save()把PyTorch里的任何东西存成.pt文件】
     def __init__(self, data, transform, cache_dir=None):
+        #继承monai.data.PersistentDataset初始化方法：
+        #    将变量 data 赋值给内部的 self.data 变量
+        #    将变量transformer拆成：1._pre_transform  2._post_transform
+        #        1._pre_transform：确定性的、结果不会变的；比如 LoadImaged 读取、Spacingd 重采样、CenterSpatialCropd 裁剪；被缓存
+        #        2._post_transform：带有随机性质的，通常以 Rand 开头；比如 RandRotated 随机旋转图片；不被缓存，在每次送入模型前实时计算
         super().__init__(data=data, transform=transform, cache_dir=cache_dir)
 
         print(f"Size of dataset: {self.__len__()}\n")
