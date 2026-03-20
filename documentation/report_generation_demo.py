@@ -18,8 +18,9 @@ from merlin.data import download_sample_data
 from merlin.data import DataLoader
 from merlin import Merlin
 
-
+#StoppingCriteria：来自第三方库transformer库，用于控制生成模型什么时候停止生成文本；继承StoppingCriteria后重写__call__方法自定义停止条件
 from transformers import StoppingCriteria
+#collections：属于Python 标准库；defaultdict 是 collections 里的一个工具类，带默认值的字典
 from collections import defaultdict
 
 
@@ -83,7 +84,7 @@ model = Merlin(RadiologyReport=True)
 model.eval()
 model.cuda()
 
-generations_dict = defaultdict(list)
+generations_dict = defaultdict(list)    #(list)：字典 generations_dict 值是list；(int)：字典值是int
 
 for batch in dataloader:
     images = batch["image"]
