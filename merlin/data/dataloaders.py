@@ -19,7 +19,7 @@ class CTPersistentDataset(monai.data.PersistentDataset):
         #继承monai.data.PersistentDataset初始化方法：
         #    将变量 data 赋值给内部的 self.data 变量
         #    将变量transformer拆成：1._pre_transform  2._post_transform
-        #        1._pre_transform：确定性的、结果不会变的；比如 LoadImaged 读取、Spacingd 重采样、CenterSpatialCropd 裁剪；被缓存
+        #        1._pre_transform：确定性的、结果不会变的；比如 LoadImaged 读取、Spacingd 重采样；被缓存【ImageTransforms里都是确定的，属于1.】
         #        2._post_transform：带有随机性质的，通常以 Rand 开头；比如 RandRotated 随机旋转图片；不被缓存，在每次送入模型前实时计算
         super().__init__(data=data, transform=transform, cache_dir=cache_dir)
 
@@ -27,6 +27,7 @@ class CTPersistentDataset(monai.data.PersistentDataset):
 
     def _cachecheck(self, item_transformed):
         hashfile = None
+        #deepcopy深拷贝：_item_transformed是独立于item_transformed的副本，防止原数据（在item_transformed）被修改
         _item_transformed = deepcopy(item_transformed)
         image_data = {
             "image": item_transformed.get("image")
