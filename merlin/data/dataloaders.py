@@ -12,6 +12,8 @@ from merlin.data.monai_transforms import ImageTransforms
 
 
 class CTPersistentDataset(monai.data.PersistentDataset):
+    #data：待处理的数据清单（N张CT的路径）
+    #transform：./monai_transformer里定义的
     def __init__(self, data, transform, cache_dir=None):
         super().__init__(data=data, transform=transform, cache_dir=cache_dir)
 
