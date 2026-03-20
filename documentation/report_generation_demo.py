@@ -1,13 +1,13 @@
 """
-Generate a radiology report for each organ system in the Merlin Abdominal CT Dataset
-and print the report for each organ system
+Generate a radiology report for each organ system in the Merlin Abdominal CT Dataset and print the report for each organ system
+为 Merlin 腹部 CT 数据集中的每个器官系统生成放射学报告，并为每个器官系统打印报告。
 
 Usage:
 accelerate launch --mixed_precision fp16 report_generation_demo.py
 
 Output:
 Prints the radiology report for each organ system
-
+打印出每个器官系统的放射学报告
 """
 
 import os
