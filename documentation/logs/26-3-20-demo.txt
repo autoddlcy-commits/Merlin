@@ -43,7 +43,7 @@ tokenizer.json: 1.36MB [00:00, 65.5MB/s]
 special_tokens_map.json: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████| 239/239 [00:00<00:00, 1.72MB/s]
 pytorch_model.bin: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████| 595M/595M [00:25<00:00, 23.1MB/s]
 
-#4.Longformer UNEXPECTED/MISSING keys警告（出现3次：代码中new 了 3 个模型）
+#4.Longformer UNEXPECTED/MISSING keys警告（出现3次：代码中new 了 4 个模型）
 #  UNEXPECTED: lm_head.*, position_ids    MISSING: pooler.dense.*
 #  常见于用一个预训练检查点加载到不同任务
 Loading weights: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████| 269/269 [00:00<00:00, 45119.88it/s]
@@ -139,3 +139,45 @@ Top 3 predicted phenotypes:
 │            │ socioeconomic, psychosocial,   │             │
 │            │ and other circumstances        │             │
 └────────────┴────────────────────────────────┴─────────────┘
+
+Downloading resnet_clinical_longformer_five_year_disease_prediction.pt from Hugging Face Hub...
+resnet_clinical_longformer_five_year_dis(…): 100%|██████████████████████████████████████████████████████████████████████████████████| 475M/475M [00:28<00:00, 16.8MB/s]
+resnet_clinical_longformer_five_year_disease_prediction.pt downloaded and saved to /opt/anaconda3/envs/med-sa/lib/python3.10/site-packages/merlin/models/checkpoints/resnet_clinical_longformer_five_year_disease_prediction.pt
+
+#同4.
+Loading weights: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████| 269/269 [00:00<00:00, 31447.34it/s]
+LongformerModel LOAD REPORT from: yikuan8/Clinical-Longformer
+Key                                | Status     |
+-----------------------------------+------------+-
+lm_head.bias                       | UNEXPECTED |
+lm_head.decoder.weight             | UNEXPECTED |
+lm_head.layer_norm.bias            | UNEXPECTED |
+lm_head.dense.bias                 | UNEXPECTED |
+lm_head.dense.weight               | UNEXPECTED |
+lm_head.layer_norm.weight          | UNEXPECTED |
+longformer.embeddings.position_ids | UNEXPECTED |
+lm_head.decoder.bias               | UNEXPECTED |
+pooler.dense.bias                  | MISSING    |
+pooler.dense.weight                | MISSING    |
+
+Notes:
+- UNEXPECTED    :can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING       :those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+
+Loading checkpoint for 'five_year_disease_prediction' task from /opt/anaconda3/envs/med-sa/lib/python3.10/site-packages/merlin/models/checkpoints/resnet_clinical_longformer_five_year_disease_prediction.pt
+
+Five year disease prediction probabilities:
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┓
+┃ Disease                   ┃ Probability ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━┩
+│ Cardiovascular Disease    │      0.4243 │
+│ (CVD)                     │             │
+│ Ischemic Heart Disease    │      0.2855 │
+│ (IHD)                     │             │
+│ Hypertension (HTN)        │      0.5322 │
+│ Diabetes Mellitus (DM)    │      0.3718 │
+│ Chronic Kidney Disease    │      0.3812 │
+│ (CKD)                     │             │
+│ Chronic Liver Disease     │      0.2829 │
+│ (CLD)                     │             │
+└───────────────────────────┴─────────────┘
