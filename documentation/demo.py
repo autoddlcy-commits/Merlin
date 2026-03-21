@@ -26,10 +26,6 @@ elif torch.backends.mps.is_available():
 else:
     device = "cpu"
 
-model = Merlin()
-model.eval()
-model.to(device)
-
 data_dir = os.path.join(os.path.dirname(__file__), "abct_data")
 cache_dir = data_dir.replace("abct_data", "abct_data_cache")
 
@@ -57,6 +53,11 @@ dataloader = DataLoader(
     num_workers=0,
 )
 
+## 1.Get the Contrastive Image Embeddings, Text Embeddings and Phenotype Predictions
+model = Merlin()
+model.eval()
+model.to(device)
+
 for batch in dataloader:
     outputs = model(batch["image"].to(device), batch["text"])
     print("\n================== Output Shapes ==================")
@@ -64,7 +65,7 @@ for batch in dataloader:
     print(f"Phenotype predictions shape: {outputs[1].shape}")
     print(f"Contrastive text embeddings shape: {outputs[2].shape}")
 
-## Get the Image Embeddings
+## 2.Get the Image Embeddings
 model = Merlin(ImageEmbedding=True)
 model.eval()
 model.to(device)
@@ -78,7 +79,7 @@ for batch in dataloader:
         f"Image embeddings shape (Can be used for downstream tasks): {outputs[0].shape}"
     )
 
-# Get the Phenotype Predictions
+# 3.Get the Phenotype Predictions
 model = Merlin(PhenotypeCls=True)
 model.eval()
 model.to(device)
@@ -116,8 +117,7 @@ for batch in dataloader:
 
     console.print(table)
 
-'''
-# Get the Five Year Disease Prediction
+# 4.Get the Five Year Disease Prediction
 model = Merlin(FiveYearPred=True)
 model.eval()
 model.to(device)
@@ -147,4 +147,3 @@ for batch in dataloader:
         table.add_row(disease, f"{prob:.4f}")
 
     console.print(table)
-'''
