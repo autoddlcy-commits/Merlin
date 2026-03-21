@@ -17,11 +17,17 @@ from rich.console import Console
 from rich.table import Table
 
 warnings.filterwarnings("ignore")
-device = "cuda" if torch.cuda.is_available() else "cpu"
+#device = "cuda" if torch.cuda.is_available() else "cpu"
+if torch.cuda.is_available():
+    device = "cuda"
+elif torch.backends.mps.is_available():
+    device = "mps"
+else:
+    device = "cpu"
 
 model = Merlin()
 model.eval()
-model.cuda()
+model.to(device)
 
 data_dir = os.path.join(os.path.dirname(__file__), "abct_data")
 cache_dir = data_dir.replace("abct_data", "abct_data_cache")
@@ -60,7 +66,7 @@ for batch in dataloader:
 ## Get the Image Embeddings
 model = Merlin(ImageEmbedding=True)
 model.eval()
-model.cuda()
+model.to(device)
 
 for batch in dataloader:
     outputs = model(
@@ -74,7 +80,7 @@ for batch in dataloader:
 # Get the Phenotype Predictions
 model = Merlin(PhenotypeCls=True)
 model.eval()
-model.cuda()
+model.to(device)
 
 phenotypes = pd.read_csv(os.path.join(os.path.dirname(__file__), "phenotypes.csv"))
 
@@ -109,11 +115,11 @@ for batch in dataloader:
 
     console.print(table)
 
-
+'''
 # Get the Five Year Disease Prediction
 model = Merlin(FiveYearPred=True)
 model.eval()
-model.cuda()
+model.to(device)
 
 disease_names = [
     "Cardiovascular Disease (CVD)",
@@ -140,3 +146,4 @@ for batch in dataloader:
         table.add_row(disease, f"{prob:.4f}")
 
     console.print(table)
+'''
