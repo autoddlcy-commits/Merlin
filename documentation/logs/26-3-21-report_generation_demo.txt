@@ -1,0 +1,59 @@
+(med-sa) apple@AppledeMacBook-Pro Merlin % accelerate launch documentation/report_generation_demo.py
+
+/opt/anaconda3/envs/med-sa/lib/python3.10/site-packages/monai/utils/deprecate_utils.py:321: FutureWarning: monai.transforms.spatial.dictionary Orientationd.__init__:labels: Current default value of argument `labels=(('L', 'R'), ('P', 'A'), ('I', 'S'))` was changed in version None from `labels=(('L', 'R'), ('P', 'A'), ('I', 'S'))` to `labels=None`. Default value changed to None meaning that the transform now uses the 'space' of a meta-tensor, if applicable, to determine appropriate axis labels.
+  warn_deprecated(argname, msg, warning_category)
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████| 269/269 [00:00<00:00, 35417.75it/s]
+LongformerModel LOAD REPORT from: yikuan8/Clinical-Longformer
+Key                                | Status     |
+-----------------------------------+------------+-
+lm_head.dense.weight               | UNEXPECTED |
+lm_head.layer_norm.bias            | UNEXPECTED |
+lm_head.decoder.weight             | UNEXPECTED |
+lm_head.layer_norm.weight          | UNEXPECTED |
+longformer.embeddings.position_ids | UNEXPECTED |
+lm_head.dense.bias                 | UNEXPECTED |
+lm_head.bias                       | UNEXPECTED |
+lm_head.decoder.bias               | UNEXPECTED |
+pooler.dense.weight                | MISSING    |
+pooler.dense.bias                  | MISSING    |
+
+Notes:
+- UNEXPECTED    :can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING       :those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+Loading checkpoint for 'default' task from /opt/anaconda3/envs/med-sa/lib/python3.10/site-packages/merlin/models/checkpoints/i3_resnet_clinical_longformer_best_clip_04-02-2024_23-21-36_epoch_99.pt
+Downloading sample data to /Users/apple/Documents/Merlin/documentation/abct_data
+image1.nii.gz downloaded and saved to /Users/apple/Documents/Merlin/documentation/abct_data/image1.nii.gz
+Size of dataset: 1
+
+Downloading resnet_gpt2_best_stanford_report_generation_average.pt from Hugging Face Hub...
+resnet_gpt2_best_stanford_report_generat(…): 100%|████████████████████████████████████████████████████████████████████████████████| 28.5G/28.5G [16:09<00:00, 29.4MB/s]
+resnet_gpt2_best_stanford_report_generation_average.pt downloaded and saved to /opt/anaconda3/envs/med-sa/lib/python3.10/site-packages/merlin/models/checkpoints/resnet_gpt2_best_stanford_report_generation_average.pt
+config.json: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 657/657 [00:00<00:00, 4.60MB/s]
+tokenizer_config.json: 12.9kB [00:00, 17.3MB/s]
+tokenization_chexagent.py: 26.6kB [00:00, 47.3MB/s]
+A new version of the following files was downloaded from https://huggingface.co/StanfordAIMI/RadLLaMA-7b:
+- tokenization_chexagent.py
+. Make sure to double-check they do not contain any added malicious code. To avoid downloading new versions of the code file, you can pin a revision.
+tokenizer.model: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████| 500k/500k [00:01<00:00, 312kB/s]
+added_tokens.json: 1.55kB [00:00, 639kB/s]
+special_tokens_map.json: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████| 734/734 [00:00<00:00, 1.85MB/s]
+model.safetensors.index.json: 23.9kB [00:00, 18.6MB/s]
+Fetching 6 files: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 6/6 [16:41<00:00, 166.95s/it]
+Download complete: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████| 27.0G/27.0G [16:41<00:00, 26.9MB/s]
+Loading weights: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████| 291/291 [00:00<00:00, 4847.83it/s]
+generation_config.json: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████| 183/183 [00:00<00:00, 999kB/s]
+trainable params: 268,435,456 || all params: 7,006,851,072 || trainable%: 3.8310
+Loading checkpoint for 'report_generation' task from /opt/anaconda3/envs/med-sa/lib/python3.10/site-packages/merlin/models/checkpoints/resnet_gpt2_best_stanford_report_generation_average.pt
+/opt/anaconda3/envs/med-sa/lib/python3.10/multiprocessing/resource_tracker.py:224: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+Traceback (most recent call last):
+  File "/opt/anaconda3/envs/med-sa/bin/accelerate", line 8, in <module>
+    sys.exit(main())
+  File "/opt/anaconda3/envs/med-sa/lib/python3.10/site-packages/accelerate/commands/accelerate_cli.py", line 50, in main
+    args.func(args)
+  File "/opt/anaconda3/envs/med-sa/lib/python3.10/site-packages/accelerate/commands/launch.py", line 1405, in launch_command
+    simple_launcher(args)
+  File "/opt/anaconda3/envs/med-sa/lib/python3.10/site-packages/accelerate/commands/launch.py", line 993, in simple_launcher
+    raise subprocess.CalledProcessError(returncode=process.returncode, cmd=cmd)
+subprocess.CalledProcessError: Command '['/opt/anaconda3/envs/med-sa/bin/python', 'documentation/report_generation_demo.py']' died with <Signals.SIGKILL: 9>.
